@@ -1,16 +1,65 @@
-import java.io.*;
-import java.nio.file.Files;
-import java.util.*;
-import java.util.LinkedList;
-import java.util.Set;
+// Start of the program
 
+import java.io.*;
+import java.util.*;
 
 public class text_summarize {
+
+    // Function for finding the maximum value key from a Hashtable.
+    public static int findMax(Hashtable<Integer, Integer> ht){
+        int max = 0;
+        int key = 0;
+
+        for(Integer key1: ht.keySet()){
+            if(max < ht.get(key1)){
+                max = ht.get(key1);
+                key = key1;
+            }
+        }
+
+        return key;
+    }
+
+    // Function for getting the most important sentences from the input file.
+    public static List<Integer> getSummary(List<Integer> ls){
+
+        Hashtable<Integer, Integer> ht1 = new Hashtable<>();
+        for(int i = 0; i < ls.size(); i++){
+            if(ht1.containsKey(ls.get(i))){
+                ht1.put(ls.get(i), ht1.get(ls.get(i)) + 1);
+                continue;
+            }
+            ht1.put(ls.get(i), 1);
+        }
+
+        List<Integer> lst1 = new ArrayList<>();
+        for(int i = 0; i < ls.size(); i++){
+            if(!lst1.contains(ls.get(i))){
+                lst1.add(ls.get(i));
+            }
+        }
+
+        // System.out.println(ht1.toString());
+
+        List<Integer> lst2 = new ArrayList<>();
+        while(lst2.size() < lst1.size()){
+            int imp = findMax(ht1);
+            lst2.add(imp);
+            ht1.remove(imp);
+        }
+
+        // List<Integer> return_lst = new ArrayList<>();
+        // for(int i = 0; i < lines; i++){
+        //     return_lst.add(lst2.get(i));
+        // }
+
+        return lst2;
+    }
 
     public static void main(String[] args) throws Exception {
 
         // Reading the input text file
-        BufferedReader reader = new BufferedReader(new FileReader("Hurr1out.txt"));
+        BufferedReader reader = new BufferedReader(new FileReader("Input3.txt"));
         StringBuilder stringBuilder = new StringBuilder();
         char[] buffer = new char[10];
         while (reader.read(buffer) != -1) {
@@ -34,13 +83,37 @@ public class text_summarize {
         // }
         // System.out.println(stopWords.size());
 
-        // Converting into a string
+        // Converting the text file data to a string
         String content = stringBuilder.toString();
         // System.out.println(content);
+
+        // Creating an array which can store the original sentences.
+        String[] original_sen = content.split(" \\./\\. ");
+        // Displaying original sentences.
+        // for(int i = 0; i < original_sen.length; i++){
+        //     System.out.println(original_sen[i]);
+        // }
         
         // Creating Linked Lists for storing objects 
         LinkedList<word> l1 = new LinkedList<word>();
         LinkedList<sentence> l2 = new LinkedList<sentence>();
+        LinkedList<originalSentence> l4 = new LinkedList<originalSentence>();
+
+        // Adding original sentences to a linked list of originalSentence objects.
+        for(String s: original_sen){
+            if(s.length() == 1){
+                continue;
+            }
+            String[] word_str = s.split(" ");
+            int no_wds = word_str.length;
+            if(no_wds == 1){
+                continue;
+            }
+
+            // Adding to l3
+            originalSentence s1 = new originalSentence(word_str, no_wds);
+            l4.add(s1);
+        }
         
         // Removing the unnecessary elements from the input file
         content = content.replaceAll("([0-9]+,[0-9]+)/[A-Z]* ", "");
@@ -89,7 +162,7 @@ public class text_summarize {
             }
         }
         
-        // Sorting the linked list according to the words
+        // Sorting the linked list according to the words.
         Collections.sort(l1, new Comparator<word>() {
             @Override
             public int compare(word w1, word w2){
@@ -132,12 +205,12 @@ public class text_summarize {
         }
 
         // Sorting the Linked list according to the frequency.
-        // Collections.sort(l1, new Comparator<word>() {
-        //     @Override
-        //     public int compare(word w1, word w2){
-        //         return (w1.freq).compareTo(w2.freq);
-        //     }
-        // });
+        Collections.sort(l3, new Comparator<word>() {
+            @Override
+            public int compare(word w1, word w2){
+                return Integer.compare(w2.freq, w1.freq);
+            }
+        });
         
         // Displaying the word objects
         // for(int i = 0; i < l1.size(); i++){
@@ -149,10 +222,10 @@ public class text_summarize {
 
         // Displaying the unique word objects
         // for(int i = 0; i < l3.size(); i++){
-            // System.out.println(l3.get(i).POS);
-            // System.out.println(l3.get(i).freq);
-            // System.out.println(l3.get(i).wd);
-            // System.out.println(l3.get(i).wd_des);
+        //     System.out.println(l3.get(i).POS);
+        //     System.out.println(l3.get(i).freq);
+        //     System.out.println(l3.get(i).wd);
+        //     System.out.println(l3.get(i).wd_des);
         // }
         
         // Displaying the sentence objects
@@ -164,21 +237,106 @@ public class text_summarize {
             // System.out.println(l2.get(i).no_wds);
         // }
 
+        // Displaying the originalSentence objects
+        // for(int i = 0; i < l4.size(); i++){
+        //     for(int j = 0; j < l4.get(i).words_des.length; j++){
+        //         System.out.println(l4.get(i).words_des[j]);
+        //     }
+        //     System.out.println(l4.get(i).lnew);
+        //     System.out.println(l4.get(i).no_wds);
+        // }
+
+        // Adding most important sentences available according to the important words.
+        int threshold_freq = 3;                 // Threshold Frequency
+        List<Integer> l5 = new ArrayList<>();
+        for(int i = 0; i < l3.size(); i++){
+            if(l3.get(i).freq >= threshold_freq && l3.get(i).POS.charAt(0) == 'N' && l3.get(i).POS.charAt(1) == 'N'){
+                for(int k = 0; k < l3.get(i).num.size(); k++){
+                    l5.add(l3.get(i).num.get(k));
+                }
+            }
+        }
+
+        int sum_per = 40;                       // How much percentage of summary you want?
+        int no_lines = (len * sum_per)/100;     // Calculating no. of lines according to the given percentage.
+        List<Integer> lst1 = getSummary(l5);    // Getting the important sentences present in the input file.
+
+        // Getting list of most important lines according to the required percentage.
+        List<Integer> output_lst = new ArrayList<>();
+        for(int i = 0; i < no_lines; i++){
+            output_lst.add(lst1.get(i));
+        }
+        System.out.println(output_lst);
+
+
         // Writing into the file
+
+        // Creating intermediate output file as output.txt
         FileWriter fWriter = new FileWriter("output.txt");
+
+        StringBuffer sb2 = new StringBuffer();
+        sb2.append("Sr. No.      Word          POS    Frequency    Term_Freq     Sentence");
+        fWriter.write(sb2.toString());
+        fWriter.write("\n");
+        fWriter.write("\n");
 
         for(int i = 0; i < l3.size(); i++){
             int j = i + 1;
-            StringBuffer sb1Buffer = new StringBuffer();
-            sb1Buffer.append("" + j + "  " + l3.get(i).wd + "  " + l3.get(i).POS + "  " + l3.get(i).freq + "  " + l3.get(i).term_freq + "  " + l3.get(i).num);
-            fWriter.write(sb1Buffer.toString());
+            StringBuffer srno = new StringBuffer();
+            StringBuffer u_word = new StringBuffer();
+            StringBuffer pos = new StringBuffer();
+            StringBuffer w_freq = new StringBuffer();
+            StringBuffer t_freq = new StringBuffer();
+            StringBuffer sent = new StringBuffer();
+
+            // Formatting the text
+            srno.append("   " + j);
+            while(srno.length() != 12) srno.append(" ");
+            u_word.append(l3.get(i).wd);
+            while(u_word.length() != 16) u_word.append(" ");
+            pos.append(l3.get(i).POS);
+            while(pos.length() != 11) pos.append(" ");
+            w_freq.append(l3.get(i).freq);
+            while(w_freq.length() != 9) w_freq.append(" ");
+            t_freq.append(l3.get(i).term_freq);
+            while(t_freq.length() != 13) t_freq.append(" ");
+            sent.append(l3.get(i).num);
+            fWriter.write(srno.toString() + u_word.toString() + pos.toString() + w_freq.toString() + t_freq.toString() + sent.toString());
             fWriter.write("\n");
         }
 
         fWriter.close();
+
+        // Creating final summary file as summary.txt
+        FileWriter fWriter1 = new FileWriter("summary.txt");
+
+        for(int i = 0; i < l4.size(); i++){
+            if(output_lst.contains(i)){
+                StringBuffer sb1Buffer = new StringBuffer();
+                for(int k = 0; k < l4.get(i).lnew.size(); k++){
+                    if(k == l4.get(i).lnew.size() - 1){
+                        sb1Buffer.append("" + l4.get(i).lnew.get(k) + "");
+                        continue;
+                    }
+                    if(l4.get(i).lnew.get(k+1).charAt(0) == ','){
+                        sb1Buffer.append("" + l4.get(i).lnew.get(k));
+                        continue;
+                    }
+                    if(l4.get(i).lnew.get(k).equals("''") || l4.get(i).lnew.get(k).equals("``")){
+                        continue;
+                    }
+                    sb1Buffer.append("" + l4.get(i).lnew.get(k) + " ");
+                }
+                fWriter1.write(sb1Buffer.toString());
+                fWriter1.write(". ");
+            }
+        }
+
+        fWriter1.close();
     }  
 }
 
+// word Class for storing the description of the important words.
 class word{
     String wd_des;
     String wd;
@@ -195,9 +353,9 @@ class word{
         this.term_freq = 1;
         this.num = new LinkedList<Integer>();
     }
-
 }
 
+// sentence class for storing the information of the sentence. 
 class sentence{
     String[] words_des;
     int no_wds;
@@ -212,7 +370,23 @@ class sentence{
             lnew.add(new1[0]);
         }
     }
+}
 
+// originalSentence class for storing the original sentences from the input file.
+class originalSentence{
+    String[] words_des;
+    int no_wds;
+    LinkedList<String> lnew;
+
+    originalSentence(String[] words_des, int no_wds){
+        this.words_des = words_des;
+        this.no_wds = no_wds;
+        this.lnew = new LinkedList<String>();
+        for(int i = 0; i < words_des.length; i++){
+            String[] new1 = words_des[i].split("/");
+            lnew.add(new1[0]);
+        }
+    }
 }
 
 
